@@ -12,14 +12,14 @@ import psycopg2
 import fitdecode
 
 # The path to the folder with all FIT files to be processed
-dir = r''
+dir = r'C:\Users\79653\Anaconda Projects\Garmin\aed04ed5-e790-4e41-8a83-afb96942c2f7_1\DI_CONNECT\DI-Connect-Fitness-Uploaded-Files\UploadedFiles_0-_Part1'
 
 # Connection details for Postgresql DB
-conn = psycopg2.connect(host="", database="", user="", password="")
+conn = psycopg2.connect(host="localhost", database="garmin_data", user="postgres", password="afande")
 
 # The names of the columns we will use in our points DataFrame. For the data we will be getting
 # from the FIT data, we use the same name as the field names to make it easier to parse the data.
-record = ['latitude', 'longitude', 'lap', 'altitude', 'timestamp', 'heart_rate', 'cadence', 'speed']
+record = ['latitude', 'longitude', 'lap', 'altitude', 'timestamp', 'heart_rate', 'cadence', 'speed', 'distance', 'power', 'temperature']
 
 # The names of the columns we will use in our laps DataFrame. 
 lap = ['number', 'start_time', 'total_distance', 'total_elapsed_time', 'max_speed', 'max_heart_rate', 'avg_heart_rate']
@@ -75,10 +75,12 @@ def load_dataframe_to_postgres(df, tabl):
                 cursor.execute("""insert into lap(activity_id, number, start_time, total_distance, total_elapsed_time, max_speed, max_heart_rate, avg_heart_rate)
                 values (%s, %s, %s, %s, %s, %s, %s, %s)""", [row.activity_id, row.number, row.start_time, row.total_distance, row.total_elapsed_time, row.max_speed, row.max_heart_rate, row.avg_heart_rate])
         elif tabl == 'record':
-            df = df.astype({'activity_id': 'int64', 'latitude': 'float64', 'longitude' : 'float64', 'lap': 'int64', 'altitude': 'float64', 'timestamp': 'datetime64[ns, UTC]', 'heart_rate': 'int64', 'cadence': 'int64', 'speed': 'int64'})
+            df = df.astype({'activity_id': 'int64', 'latitude': 'float64', 'longitude' : 'float64', 'lap': 'int64', 'altitude': 'float64',\
+                            'timestamp': 'datetime64[ns, UTC]', 'heart_rate': 'int64', 'cadence': 'int64', 'speed': 'int64', \
+                            'distance': 'float64', 'power': 'int64', 'temperature': 'int64'})
             for index, row in df.iterrows():
-                cursor.execute("""insert into record(activity_id, latitude, longitude, lap, altitude, timestamp, heart_rate, cadence, speed)
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", [row.activity_id, row.latitude, row.longitude, row.lap, row.altitude, row.timestamp, row.heart_rate, row.cadence, row.speed])
+                cursor.execute("""insert into record(activity_id, latitude, longitude, lap, altitude, timestamp, heart_rate, cadence, speed, distance, power, temperature)
+                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", [row.activity_id, row.latitude, row.longitude, row.lap, row.altitude, row.timestamp, row.heart_rate, row.cadence, row.speed, row.distance, row.power, row.temperature])
         elif tabl == 'session':
             df = df.astype({'activity_id': 'int64', 'timestamp': 'datetime64[ns, UTC]', 'start_time': 'datetime64[ns, UTC]', 'start_position_lat': 'int64', 'start_position_long': 'int64', 'total_elapsed_time':'float64', \
                             'total_timer_time': 'float64', 'total_distance': 'float64', 'total_strokes': 'float64', 'nec_lat': 'int64', 'nec_long': 'int64', 'swc_lat': 'int64', \
@@ -210,21 +212,22 @@ if __name__ == '__main__':
     from os import listdir
     from os.path import isfile, join
     
-    # All the FIT files
     files = [f for f in listdir(dir) if isfile(join(dir, f))]
-    # Testing random sample of files
-#     test_files = random.choices(files, k=10)
-    
-    for file in test_files:
-        fname = dir+"\\"+file
-        user_id, activity_id = get_user_activity_details(fname)
-        lap_df, record_df, file_id_df, activity_df, session_df = get_dataframes(fname)
-        print('user_activity:', user_id, activity_id)
-    
-    # load to DB
-        load_dataframe_to_postgres(activity_df, 'activity')
-        load_dataframe_to_postgres(file_id_df, 'file_id')
-        load_dataframe_to_postgres(lap_df, 'lap')
-        load_dataframe_to_postgres(record_df, 'record')
-        load_dataframe_to_postgres(session_df, 'session')
-    print('finished') 
+    errors = []
+    for file in files:
+        try:
+            fname = dir+"\\"+file
+            user_id, activity_id = get_user_activity_details(fname)
+            lap_df, record_df, file_id_df, activity_df, session_df = get_dataframes(fname)
+            print('user_activity:', user_id, activity_id)
+            # load to DB
+                load_dataframe_to_postgres(activity_df, 'activity')
+                load_dataframe_to_postgres(file_id_df, 'file_id')
+                load_dataframe_to_postgres(lap_df, 'lap')
+            load_dataframe_to_postgres(record_df, 'record')
+                load_dataframe_to_postgres(session_df, 'session')
+        except:
+            errors.append(activity_id)
+    print('finished')
+    print('errors')
+    print(errors)
