@@ -12,10 +12,10 @@ import psycopg2
 import fitdecode
 
 # The path to the folder with all FIT files to be processed
-dir = r'C:\Users\79653\Anaconda Projects\Garmin\aed04ed5-e790-4e41-8a83-afb96942c2f7_1\DI_CONNECT\DI-Connect-Fitness-Uploaded-Files\UploadedFiles_0-_Part1'
+dir = r'*****'
 
 # Connection details for Postgresql DB
-conn = psycopg2.connect(host="localhost", database="garmin_data", user="postgres", password="afande")
+conn = psycopg2.connect(host="localhost", database="garmin_data", user="postgres", password="*****")
 
 # The names of the columns we will use in our points DataFrame. For the data we will be getting
 # from the FIT data, we use the same name as the field names to make it easier to parse the data.
@@ -224,7 +224,7 @@ if __name__ == '__main__':
                 load_dataframe_to_postgres(activity_df, 'activity')
                 load_dataframe_to_postgres(file_id_df, 'file_id')
                 load_dataframe_to_postgres(lap_df, 'lap')
-            load_dataframe_to_postgres(record_df, 'record')
+                load_dataframe_to_postgres(record_df, 'record')
                 load_dataframe_to_postgres(session_df, 'session')
         except:
             errors.append(activity_id)
